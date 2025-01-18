@@ -89,7 +89,7 @@ trait HasHarnessInstantiators {
     withClockAndReset (harnessBinderClock, harnessBinderReset) {
       lazyDuts.zipWithIndex.foreach {
         case (d: HasChipyardPorts, i: Int) => {
-          ApplyHarnessBinders(this, d.ports)(chipParameters(i))
+          ApplyHarnessBinders(this, d.ports, i)(chipParameters(i))
         }
         case _ =>
       }
@@ -99,6 +99,7 @@ trait HasHarnessInstantiators {
     if (p(DontTouchChipTopPorts)) {
       duts.map(_ match {
         case d: DontTouch => d.dontTouchPorts()
+        case _ =>
       })
     }
 

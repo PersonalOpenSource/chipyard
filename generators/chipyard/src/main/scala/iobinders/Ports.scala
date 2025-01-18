@@ -4,16 +4,20 @@ import chisel3._
 import chisel3.experimental.{Analog}
 import sifive.blocks.devices.uart.{UARTPortIO}
 import sifive.blocks.devices.spi.{SPIFlashParams, SPIPortIO}
-import sifive.blocks.devices.i2c.{I2CPort}
 import sifive.blocks.devices.gpio.{GPIOPortIO}
-import testchipip._
+import testchipip.util.{ClockedIO}
+import testchipip.serdes.{TLSerdesser, SerialIO, SerialTLParams}
+import testchipip.spi.{SPIChipIO}
+import testchipip.cosim.{TraceOutputTop, SpikeCosimConfig}
+import testchipip.iceblk.{BlockDeviceIO, BlockDeviceConfig}
+import testchipip.tsi.{UARTTSIIO}
 import icenet.{NICIOvonly, NICConfig}
 import org.chipsalliance.cde.config.{Parameters}
 import freechips.rocketchip.amba.axi4.{AXI4Bundle, AXI4EdgeParameters}
 import freechips.rocketchip.subsystem.{MemoryPortParams, MasterPortParams, SlavePortParams}
 import freechips.rocketchip.devices.debug.{ClockedDMIIO}
-import freechips.rocketchip.util.{HeterogeneousBag}
 import freechips.rocketchip.tilelink.{TLBundle}
+import org.chipsalliance.diplomacy.nodes.{HeterogeneousBag}
 
 trait Port[T <: Data] {
   val getIO: () => T
@@ -68,8 +72,12 @@ case class DMIPort         (val getIO: () => ClockedDMIIO)
 case class JTAGPort        (val getIO: () => JTAGChipIO)
     extends Port[JTAGChipIO]
 
-case class SerialTLPort    (val getIO: () => ClockedIO[SerialIO], val params: SerialTLParams, val serdesser: TLSerdesser, val portId: Int)
-    extends Port[ClockedIO[SerialIO]]
+// Lack of nice union types in scala-2 means we have to set this type as Data
+case class SerialTLPort    (val getIO: () => Data, val params: SerialTLParams, val serdesser: TLSerdesser, val portId: Int)
+    extends Port[Data]
+
+case class ChipIdPort      (val getIO: () => UInt)
+    extends Port[UInt]
 
 case class UARTTSIPort     (val getIO: () => UARTTSIIO)
     extends Port[UARTTSIIO]
@@ -86,6 +94,9 @@ case class CustomBootPort  (val getIO: () => Bool)
 case class ClockPort       (val getIO: () => Clock, val freqMHz: Double)
     extends Port[Clock]
 
+case class ClockTapPort    (val getIO: () => Clock)
+    extends Port[Clock]
+
 case class ResetPort       (val getIO: () => AsyncReset)
     extends Port[Reset]
 
@@ -98,3 +109,5 @@ case class JTAGResetPort   (val getIO: () => Reset)
 case class TLMemPort       (val getIO: () => HeterogeneousBag[TLBundle])
     extends Port[HeterogeneousBag[TLBundle]]
 
+case class GCDBusyPort     (val getIO: () => Bool)
+    extends Port[Bool]

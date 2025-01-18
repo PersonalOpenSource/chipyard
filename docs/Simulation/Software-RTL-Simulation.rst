@@ -50,16 +50,16 @@ This will elaborate the ``RocketConfig`` in the example project.
 
 .. Note:: The elaboration of ``RocketConfig`` requires about 6.5 GB of main memory. Otherwise the process will fail with ``make: *** [firrtl_temp] Error 137`` which is most likely related to limited resources. Other configurations might require even more main memory.
 
-An executable called ``simulator-chipyard-RocketConfig`` will be produced.
+An executable called ``simulator-chipyard.harness-RocketConfig`` will be produced.
 This executable is a simulator that has been compiled based on the design that was built.
 You can then use this executable to run any compatible RV64 code.
 For instance, to run one of the riscv-tools assembly tests.
 
 .. code-block:: shell
 
-    ./simulator-chipyard-RocketConfig $RISCV/riscv64-unknown-elf/share/riscv-tests/isa/rv64ui-p-simple
+    ./simulator-chipyard.harness-RocketConfig $RISCV/riscv64-unknown-elf/share/riscv-tests/isa/rv64ui-p-simple
 
-.. Note:: In a VCS simulator, the simulator name will be ``simv-chipyard-RocketConfig`` instead of ``simulator-chipyard-RocketConfig``.
+.. Note:: In a VCS simulator, the simulator name will be ``simv-chipyard.harness-RocketConfig`` instead of ``simulator-chipyard.harness-RocketConfig``.
 
 The makefiles have a ``run-binary`` rule that simplifies running the simulation executable. It adds many of the common command line options for you and redirects the output to a file.
 
@@ -155,13 +155,6 @@ Therefore, in order to simulate a simple Rocket-based example system we can use:
     ./simulator-<yourproject>-<yourconfig> ...
 
 
-All ``make`` targets that can be applied to the default example, can also be applied to custom project using the custom environment variables. For example, the following code example will run the RISC-V assembly benchmark suite on the Hwacha subproject:
-
-.. code-block:: shell
-
-    make SUB_PROJECT=hwacha run-asm-tests
-
-
 Finally, in the ``generated-src/<...>-<package>-<config>/`` directory resides all of the collateral while the generated Verilog source files resides in ``generated-src/<...>-<package>-<config>/gen-collateral`` for the build/simulation.
 Specifically, for ``CONFIG=RocketConfig`` the SoC top-level (``TOP``) Verilog file is ``ChipTop.sv`` while the (``Model``) file is ``TestHarness.sv``.
 
@@ -223,3 +216,29 @@ The ``VERILATOR_THREADS=<num>`` option enables the compiled Verilator simulator 
 On a multi-socket machine, you will want to make sure all threads are on the same socket by using ``NUMACTL=1`` to enable ``numactl``.
 By enabling this, you will use Chipyard's ``numa_prefix`` wrapper, which is a simple wrapper around ``numactl`` that runs your verilated simulator like this: ``$(numa_prefix) ./simulator-<name> <simulator-args>``.
 Note that both these flags are mutually exclusive, you can use either independently (though it makes sense to use ``NUMACTL`` just with ``VERILATOR_THREADS=8`` during a Verilator simulation).
+
+
+Speeding up your RTL Simulation by 2x!
+-----------------------------------------------
+
+There are many cases when your custom module interfaces with Tilelink (e.g., when you write a custom accelerator).
+Wrong interfaces with Tilelink can cause the SoC to hang and can be tricky to debug.
+To help deal with these situations, you can add hardware modules called Tilelink monitors into
+your SoC that will fire assertions when wrong Tilelink messages are sent.
+However, these modules can significantly slow down the speed of your RTL simulation.
+
+These modules are added to the SoC as a default and users have to manually
+remove these modules by adding the below line into your config.
+
+.. code-block:: scala
+
+  new freechips.rocketchip.subsystem.WithoutTLMonitors ++
+
+
+For instance:
+
+.. code-block:: scala
+
+  class FastRTLSimRocketConfig extends Config(
+    new freechips.rocketchip.subsystem.WithoutTLMonitors ++
+    new chipyard.RocketConfig)
