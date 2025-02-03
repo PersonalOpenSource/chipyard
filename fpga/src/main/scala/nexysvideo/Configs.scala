@@ -5,34 +5,31 @@ import org.chipsalliance.cde.config._
 import freechips.rocketchip.subsystem._
 import freechips.rocketchip.devices.debug._
 import freechips.rocketchip.devices.tilelink._
-import freechips.rocketchip.diplomacy._
+import org.chipsalliance.diplomacy.lazymodule._
 import freechips.rocketchip.system._
 import freechips.rocketchip.tile._
 
 import sifive.blocks.devices.uart._
 import sifive.fpgashells.shell.{DesignKey}
 
-import testchipip.{SerialTLKey}
+import testchipip.serdes.{SerialTLKey}
 
 import chipyard.{BuildSystem}
 
 // don't use FPGAShell's DesignKey
 class WithNoDesignKey extends Config((site, here, up) => {
-  case DesignKey => (p: Parameters) => new SimpleLazyModule()(p)
+  case DesignKey => (p: Parameters) => new SimpleLazyRawModule()(p)
 })
 
 // DOC include start: WithNexysVideoTweaks and Rocket
-class WithNexysVideoTweaks extends Config(
+class WithNexysVideoTweaks(freqMHz: Double = 50) extends Config(
   new WithNexysVideoUARTTSI ++
   new WithNexysVideoDDRTL ++
   new WithNoDesignKey ++
-  new testchipip.WithUARTTSIClient ++
+  new testchipip.tsi.WithUARTTSIClient ++
   new chipyard.harness.WithSerialTLTiedOff ++
-  new chipyard.harness.WithHarnessBinderClockFreqMHz(50) ++
-  new chipyard.config.WithMemoryBusFrequency(50.0) ++
-  new chipyard.config.WithFrontBusFrequency(50.0) ++
-  new chipyard.config.WithSystemBusFrequency(50.0) ++
-  new chipyard.config.WithPeripheryBusFrequency(50.0) ++
+  new chipyard.harness.WithHarnessBinderClockFreqMHz(freqMHz) ++
+  new chipyard.config.WithUniformBusFrequencies(freqMHz) ++
   new chipyard.harness.WithAllClocksFromHarnessClockInstantiator ++
   new chipyard.clocking.WithPassthroughClockGenerator ++
   new chipyard.config.WithNoDebug ++ // no jtag
@@ -52,13 +49,14 @@ class WithTinyNexysVideoTweaks extends Config(
   new WithNexysVideoUARTTSI ++
   new WithNoDesignKey ++
   new sifive.fpgashells.shell.xilinx.WithNoNexysVideoShellDDR ++ // no DDR
-  new testchipip.WithUARTTSIClient ++
+  new testchipip.tsi.WithUARTTSIClient ++
   new chipyard.harness.WithSerialTLTiedOff ++
   new chipyard.harness.WithHarnessBinderClockFreqMHz(50) ++
   new chipyard.config.WithMemoryBusFrequency(50.0) ++
   new chipyard.config.WithFrontBusFrequency(50.0) ++
   new chipyard.config.WithSystemBusFrequency(50.0) ++
   new chipyard.config.WithPeripheryBusFrequency(50.0) ++
+  new chipyard.config.WithControlBusFrequency(50.0) ++
   new chipyard.harness.WithAllClocksFromHarnessClockInstantiator ++
   new chipyard.clocking.WithPassthroughClockGenerator ++
   new chipyard.config.WithNoDebug ++ // no jtag
@@ -70,3 +68,9 @@ class TinyRocketNexysVideoConfig extends Config(
   new chipyard.config.WithBroadcastManager ++ // no l2
   new chipyard.TinyRocketConfig)
   // DOC include end: WithTinyNexysVideoTweaks and Rocket
+
+class BringupNexysVideoConfig extends Config(
+  new WithNexysVideoSerialTLToGPIO ++
+  new WithNexysVideoTweaks(freqMHz = 75) ++
+  new chipyard.ChipBringupHostConfig)
+

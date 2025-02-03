@@ -5,13 +5,12 @@ import chisel3._
 import scala.collection.mutable.{ArrayBuffer}
 
 import freechips.rocketchip.prci.{ClockGroupIdentityNode, ClockSinkParameters, ClockSinkNode, ClockGroup}
-import freechips.rocketchip.subsystem.{BaseSubsystem, SubsystemDriveAsyncClockGroupsKey}
 import org.chipsalliance.cde.config.{Parameters, Field}
 import freechips.rocketchip.diplomacy.{LazyModule, LazyModuleImp, LazyRawModuleImp, LazyModuleImpLike, BindingScope}
 import freechips.rocketchip.util.{DontTouch}
 import chipyard.iobinders._
 
-import barstools.iocell.chisel._
+import chipyard.iocell._
 
 case object BuildSystem extends Field[Parameters => LazyModule]((p: Parameters) => new DigitalTop()(p))
 
